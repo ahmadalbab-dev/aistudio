@@ -33,3 +33,7 @@ test('public pricing has public links and the collapsed desktop menu opens a sep
  await page.getByRole('button',{name:'Open navigation',exact:true}).click();await page.getByRole('navigation',{name:'Workspace menu',exact:true}).getByRole('link',{name:'Pricing / Plans',exact:true}).click();await expect(page).toHaveURL(/\/preview\/pricing$/);
  await page.getByRole('button',{name:'View Essential',exact:true}).click();await page.getByRole('button',{name:'Close plan details',exact:true}).click();await expect(page.getByRole('dialog')).toHaveCount(0);
 });
+test('annual promotion terms identify first subscription, renewal price and non-stacking',async({page})=>{
+ await page.goto('/preview/pricing');await page.getByRole('switch',{name:'Annual billing'}).click();await page.getByRole('link',{name:'Promotion terms',exact:true}).click();await expect(page).toHaveURL(/\/terms#subscription-promotions$/);
+ await expect(page.getByRole('heading',{name:'9. Subscription prices and introductory promotions'})).toBeVisible();await expect(page.locator('article')).toContainText('$34.20 USD for the first year');await expect(page.locator('article')).toContainText('$54 USD for the first year');await expect(page.locator('article')).toContainText('only once per Orbit account');await expect(page.locator('article')).toContainText('does not reset eligibility');await expect(page.locator('article')).toContainText('cannot be combined');await expect(page.locator('article')).toContainText('Last updated October 25, 2026');
+});

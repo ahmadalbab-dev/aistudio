@@ -1,7 +1,7 @@
 import { LegalPage } from "../legal-content";
 
 export default function TermsPage() {
-  return <LegalPage eyebrow="Legal" title="Terms of Use" summary="Rules for using Orbit Social responsibly, safely, and in compliance with connected social platforms.">
+  return <LegalPage eyebrow="Legal" title="Terms of Use" lastUpdated="October 25, 2026" summary="Rules for using Orbit Social responsibly, safely, and in compliance with connected social platforms.">
     <h2>1. Acceptance and eligibility</h2>
     <p>By using Orbit Social, you confirm that you are authorized to act for the workspace and connected social accounts and that you will follow these terms and each platform&apos;s applicable policies.</p>
     <h2>2. Human approval remains required</h2>
