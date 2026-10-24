@@ -22,6 +22,7 @@ import {useDevicePreferences} from "./use-device-preferences";
 import {WorkspaceSettings} from "./workspace-settings";
 import "./workspace-settings.css";
 import "./workspace-navigation.css";
+import type {AccountProfile,PersonalProfile} from "./personal-profile";
 import {ProfilePanel,ProfilePeek} from "./profile-panel";
 import {ConnectionsPanel,type IntegrationStatus} from "./connections-panel";
 
@@ -35,7 +36,7 @@ const navigation = [{ id: "overview", label: "Home", accessible: "Overview", ico
 import {api} from "./session-api";
 const errorMessage = (error: unknown) => error instanceof Error ? error.message : "Please try again.";
 
-export default function Home({workspaceId,workspaceName="Preview workspace",workspaceControls,preview=false}:{workspaceId:string;workspaceName?:string;workspaceControls?:ReactNode;preview?:boolean}) {
+export default function Home({workspaceId,workspaceName="Preview workspace",workspaceControls,preview=false,accountProfile,savePersonal}:{workspaceId:string;workspaceName?:string;workspaceControls?:ReactNode;preview?:boolean;accountProfile?:AccountProfile|null;savePersonal?:(profile:PersonalProfile)=>Promise<void>}) {
   const [view, setView] = useState<View>("overview");
   useEffect(() => {
     const query = new URLSearchParams(window.location.search);
@@ -82,7 +83,7 @@ export default function Home({workspaceId,workspaceName="Preview workspace",work
     <header className="app-header workspace-header">
       <button className="brand-word workspace-brand" onClick={()=>go("overview")} aria-label="Orbit home"><OrbitMark small/><span className="workspace-brand-copy"><span>orbit<span className="word-dot">.</span></span><small className="current-workspace-name" title={workspaceName}>{workspaceName}</small></span></button>
       <WorkspaceNavigation items={[...navigation.map(item=>({...item,badge:item.id==="calendar"&&scheduledCount?(scheduledCount>99?"99+":String(scheduledCount)):undefined})),{id:"pricing",label:"Plans",accessible:"Pricing / Plans",icon:CreditCard,href:preview?"/preview/pricing":"/pricing"}]} activeId={view} onSelect={id=>go(id as View)}/>
-      <div className="workspace-header-actions"><AppearanceToggle/><ProfilePeek profile={profile} status={connection} onOpen={()=>go("profile")}/></div>
+      <div className="workspace-header-actions"><AppearanceToggle/><ProfilePeek profile={profile} status={connection} guest={preview} account={accountProfile} onOpen={()=>go("profile")}/></div>
     </header>
     <div className={`app-content ${view==="overview"?"app-content-home":""}`}>{notice?<div role="alert" className="alert-message">{notice}<IconButton label="Refresh workspace" onClick={refresh}><RefreshCw size={17}/></IconButton></div>:null}
       <details className="preview-note"><summary><LockKeyhole size={13}/>{preview?"v1 design preview · local tools only":"Private workspace · live posting off"}<Info size={13}/></summary><p>{preview?"Try navigation, Light/Dark mode, image editing and local video previews. AI generation, saved drafts, account connections, server renders and payments require a configured backend and sign-in. Files selected here stay on this device unless you explicitly upload from an authenticated workspace.":"Drafts and brand profiles use the configured backend. Image edits and video previews stay on this device. Video uploads happen only when you choose Upload to workspace; configured workers produce downloadable MP4 files. Live publishing is off."}</p></details>
@@ -91,7 +92,7 @@ export default function Home({workspaceId,workspaceName="Preview workspace",work
       {view==="video"?<MediaEntry preview={preview}/>:null}
       <div hidden={view!=="calendar"}><Calendar items={items} refresh={refresh} openDraft={openDraft}/></div>
       <div hidden={view!=="connections"}><ConnectionsPanel status={connection} preview={preview} onStatus={setConnection}/></div>
-      <div hidden={view!=="profile"}>{view==="profile"?<ProfilePanel preview={preview} profile={profile} save={saveProfile} status={connection} onConnect={()=>go("connections")} onRefresh={refreshConnections}/>:null}</div>
+      <div hidden={view!=="profile"}>{view==="profile"?<ProfilePanel preview={preview} profile={profile} save={saveProfile} status={connection} accountProfile={accountProfile} savePersonal={savePersonal} onConnect={()=>go("connections")} onRefresh={refreshConnections}/>:null}</div>
       <div hidden={view!=="settings"}>{view==="settings"?<WorkspaceSettings preview={preview} workspaceControls={workspaceControls}/>:null}</div>
       <footer className="orbit-footer"><span className="footer-mark">orbit<span className="word-dot">.</span></span><span>Make room for better content.</span><div><a href="/privacy">Privacy</a><a href="/terms">Terms</a><a href="/data-deletion">Your data</a></div></footer>
     </div>

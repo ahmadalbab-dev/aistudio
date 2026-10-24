@@ -5,7 +5,7 @@ export function browserPreferences(){return detectRegionalPreferences(navigator.
 export function useDevicePreferences() {
   const [preferences,setPreferences]=useState(defaultPreferences);
   useEffect(()=>{
-    const sync=()=>{let stored:DevicePreferences|null=null;try{const raw=localStorage.getItem(PREFERENCES_KEY);if(raw)stored=sanitizePreferences(JSON.parse(raw));}catch{}const auto=browserPreferences();const next=!stored?auto:stored.regionalMode==="automatic"?{...stored,...auto,dateStyle:stored.dateStyle,mediaEditor:stored.mediaEditor}:stored;setPreferences(old=>JSON.stringify(old)===JSON.stringify(next)?old:next);};
+    const sync=()=>{let stored:DevicePreferences|null=null;try{const raw=localStorage.getItem(PREFERENCES_KEY);if(raw)stored=sanitizePreferences(JSON.parse(raw));}catch{}const auto=browserPreferences();const next=!stored?auto:stored.regionalMode==="automatic"?{...stored,...auto,country:auto.country,dateStyle:stored.dateStyle,mediaEditor:stored.mediaEditor}:stored;setPreferences(old=>JSON.stringify(old)===JSON.stringify(next)?old:next);};
     const storage=(event:StorageEvent)=>{if(event.key===PREFERENCES_KEY||event.key===null)sync();};
     const visible=()=>{if(!document.hidden)sync();};
     sync();window.addEventListener("orbit-preferences",sync);window.addEventListener("storage",storage);window.addEventListener("languagechange",sync);window.addEventListener("focus",sync);document.addEventListener("visibilitychange",visible);

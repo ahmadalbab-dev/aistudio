@@ -80,7 +80,7 @@ test("every page retains the animated Orbit mark and reduced-motion override",as
  await expect(page.locator("html")).toHaveAttribute("data-motion","paused");
  await page.evaluate(()=>new Promise<void>(resolve=>requestAnimationFrame(()=>requestAnimationFrame(()=>resolve()))));
  const paused=await frame();await page.waitForTimeout(200);expect(await frame()).toEqual(paused);
- await page.getByRole("button",{name:"Open profile",exact:true}).click();
+ await page.goto("/preview?view=profile");
  await expect(mark).toBeVisible();
  await expect.poll(async()=>(await frame()).painted).toBe(true);
  await page.evaluate(()=>new Promise<void>(resolve=>requestAnimationFrame(()=>requestAnimationFrame(()=>resolve()))));

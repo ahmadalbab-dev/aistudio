@@ -1,4 +1,5 @@
 import type {AuthSession} from './auth-client';
+import {accountProfileFromUser} from './personal-profile';
 let pending:Promise<unknown>=Promise.resolve();
 async function serial<T>(action:()=>Promise<T>):Promise<T>{
  const run=()=>typeof navigator!=='undefined'&&navigator.locks?navigator.locks.request('orbit-auth-session',async()=>await action()) as Promise<T>:action();
@@ -10,7 +11,8 @@ export async function browserSession(refreshToken?:string):Promise<AuthSession|n
   if(response.status===401)return null;
   if(!response.ok)throw Object.assign(Error('Cannot restore your session right now. Check your connection and retry.'),{retryable:true});
   const body=await response.json();if(typeof body.access_token!=='string'||typeof body.expires_in!=='number'||body.expires_in<=0||body.refreshable!==true)throw Error('Invalid session response.');
-  return {access_token:body.access_token,expires_in:body.expires_in,refreshable:true};
+  const profile=body.profile?accountProfileFromUser({id:body.profile.userId,user_metadata:{orbit_profile:body.profile.provided?body.profile.details:undefined}}):undefined;
+  return {access_token:body.access_token,expires_in:body.expires_in,refreshable:true,...(profile?{profile}:{})};
  });
 }
 export async function clearBrowserSession(){return serial(async()=>{const response=await fetch('/api/auth/session',{method:'DELETE',credentials:'same-origin',cache:'no-store',signal:AbortSignal.timeout(10000)});if(!response.ok)throw Error('Could not clear saved session. Retry sign out.');});}

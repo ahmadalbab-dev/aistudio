@@ -1,6 +1,7 @@
+import {countries,countryByCode} from "./countries";
 export const regionalLanguages = {"en-MY":"English (Malaysia)","ms-MY":"Bahasa Melayu","en-US":"English (US)","en-GB":"English (UK)","id-ID":"Bahasa Indonesia","zh-CN":"中文","ja-JP":"日本語","ko-KR":"한국어","th-TH":"ไทย","ar-SA":"العربية","fr-FR":"Français","de-DE":"Deutsch","es-ES":"Español"} as const;
 export const regionalCurrencies = ["MYR","USD","SGD","GBP","EUR","IDR","THB","JPY","CNY","KRW","AUD","CAD","INR","SAR"] as const;
-export type DevicePreferences = { city: string; timeZone: string; locale: keyof typeof regionalLanguages; currency?: typeof regionalCurrencies[number]; regionalMode?: "automatic" | "manual"; hour12: boolean; dateStyle: "medium" | "short"; mediaEditor: "image" | "video" };
+export type DevicePreferences = { country?:string; city: string; timeZone: string; locale: keyof typeof regionalLanguages; currency?: typeof regionalCurrencies[number]; regionalMode?: "automatic" | "manual"; hour12: boolean; dateStyle: "medium" | "short"; mediaEditor: "image" | "video" };
 export const PREFERENCES_KEY = "orbit-device-preferences-v1";
 export const defaultPreferences: DevicePreferences = {city:"Kuala Lumpur",timeZone:"Asia/Kuala_Lumpur",locale:"en-MY",hour12:false,dateStyle:"medium",mediaEditor:"video"};
 export const cities = [
@@ -23,7 +24,7 @@ export const cities = [
 export function isTimeZone(value:string) {try {new Intl.DateTimeFormat("en",{timeZone:value}).format();return value.length>0;}catch{return false;}}
 export function sanitizePreferences(value:unknown):DevicePreferences {
   const v = (value && typeof value === "object" ? value : {}) as Partial<DevicePreferences>;
-  return {city: typeof v.city === "string" && v.city.trim() ? v.city.trim().slice(0,100) : defaultPreferences.city,timeZone:typeof v.timeZone === "string" && isTimeZone(v.timeZone) ? v.timeZone : defaultPreferences.timeZone,locale:typeof v.locale==="string"&&Object.hasOwn(regionalLanguages,v.locale)?v.locale:"en-MY",hour12:v.hour12===true,dateStyle:v.dateStyle==="short"?"short":"medium",mediaEditor:v.mediaEditor==="image"?"image":"video",...(v.currency&&regionalCurrencies.includes(v.currency)?{currency:v.currency}:{}),...(v.regionalMode==="automatic"||v.regionalMode==="manual"?{regionalMode:v.regionalMode}:{})};
+  return {...(countryByCode(v.country)?{country:v.country}:{}),city: typeof v.city === "string" && v.city.trim() ? v.city.trim().slice(0,100) : defaultPreferences.city,timeZone:typeof v.timeZone === "string" && isTimeZone(v.timeZone) ? v.timeZone : defaultPreferences.timeZone,locale:typeof v.locale==="string"&&Object.hasOwn(regionalLanguages,v.locale)?v.locale:"en-MY",hour12:v.hour12===true,dateStyle:v.dateStyle==="short"?"short":"medium",mediaEditor:v.mediaEditor==="image"?"image":"video",...(v.currency&&regionalCurrencies.includes(v.currency)?{currency:v.currency}:{}),...(v.regionalMode==="automatic"||v.regionalMode==="manual"?{regionalMode:v.regionalMode}:{})};
 }
 /** Browser settings are hints, not GPS or proof of residence. No network or coordinates. */
 export function detectRegionalPreferences(language:string,timeZone:string):DevicePreferences {
@@ -33,7 +34,8 @@ export function detectRegionalPreferences(language:string,timeZone:string):Devic
   const countryCurrency:Record<string,NonNullable<DevicePreferences["currency"]>>={MY:"MYR",US:"USD",SG:"SGD",GB:"GBP",ID:"IDR",TH:"THB",JP:"JPY",CN:"CNY",KR:"KRW",AU:"AUD",CA:"CAD",IN:"INR",SA:"SAR",FR:"EUR",DE:"EUR",ES:"EUR"};
   const zoneCurrency:Record<string,NonNullable<DevicePreferences["currency"]>>={"Asia/Kuala_Lumpur":"MYR","Asia/Kuching":"MYR","Asia/Singapore":"SGD","Europe/London":"GBP","Asia/Jakarta":"IDR","Asia/Bangkok":"THB","Asia/Tokyo":"JPY","Asia/Shanghai":"CNY","Asia/Seoul":"KRW","Australia/Sydney":"AUD","America/New_York":"USD","America/Los_Angeles":"USD","Europe/Paris":"EUR","Europe/Berlin":"EUR"};
   const currency=zoneCurrency[zone]??countryCurrency[requested.region??""]??"USD";
-  return {...defaultPreferences,locale,timeZone:zone,city:cities.find(city=>city.timeZone===zone)?.name??zone.split("/").at(-1)!.replaceAll("_"," "),currency,regionalMode:"automatic",hour12:new Intl.DateTimeFormat(locale,{hour:"numeric"}).resolvedOptions().hour12??false};
+  const country=countries.find(country=>country.zones.some(candidate=>candidate===zone))??countryByCode(requested.region);
+  return {...defaultPreferences,...(country?{country:country.code}:{}),locale,timeZone:zone,city:cities.find(city=>city.timeZone===zone)?.name??zone.split("/").at(-1)!.replaceAll("_"," "),currency,regionalMode:"automatic",hour12:new Intl.DateTimeFormat(locale,{hour:"numeric"}).resolvedOptions().hour12??false};
 }
 export function nearestCity(latitude:number,longitude:number) {
   if(!Number.isFinite(latitude)||!Number.isFinite(longitude)||Math.abs(latitude)>90||Math.abs(longitude)>180)return null;

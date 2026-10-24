@@ -1,4 +1,5 @@
 import { publicAuthConfig } from '../../../orbit/auth-client';
+import {accountProfileFromUser} from '../../../orbit/personal-profile';
 const cookieName='orbit-refresh';
 const baseHeaders={'Cache-Control':'private, no-store, max-age=0','Pragma':'no-cache','Vary':'Cookie, Origin'};
 function cookie(value:string,secure:boolean){return `${cookieName}=${encodeURIComponent(value)}; Path=/api/auth/session; HttpOnly; SameSite=Strict; Max-Age=${value?2592000:0}${secure?'; Secure':''}`;}
@@ -18,6 +19,7 @@ export async function handleSession(request:Request,config=publicAuthConfig(),fe
   if(!response.ok){await response.body?.cancel();return response.status===400||response.status===401||response.status===403?reply({message:'Your session ended. Sign in again.'},401,''):reply({message:'Cannot restore your session right now. Please retry.'},503);}
   const data=await response.json();
   if(typeof data.access_token!=='string'||!data.access_token||typeof data.refresh_token!=='string'||!data.refresh_token||data.refresh_token.length>4096||typeof data.expires_in!=='number'||!Number.isFinite(data.expires_in)||data.expires_in<=0)return reply({message:'Invalid session response.'},503);
-  return reply({access_token:data.access_token,expires_in:data.expires_in,refreshable:true},200,data.refresh_token);
+  const profile=accountProfileFromUser(data.user);
+  return reply({access_token:data.access_token,expires_in:data.expires_in,refreshable:true,...(profile?{profile}:{})},200,data.refresh_token);
  }catch{return reply({message:'Cannot restore your session right now. Please retry.'},503);}
 }
