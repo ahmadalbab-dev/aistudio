@@ -4,7 +4,7 @@ test('Studio stages the active draft for AI rewrite without sending it until Gen
  const original='Public fixture caption for a handmade coffee cup.';
  const draft={id:'draft-one',topic:'Public fixture',status:'DRAFT',revision:1,variants:[{platform:'facebook',copy:original,hashtags:[],callToAction:''}]};
  const generations:unknown[]=[];let brands=0;let statusChecks=0;let writes=0;
- let statusAvailable=true;
+ let statusAvailable=true;let finishGeneration!:()=>void;const generationGate=new Promise<void>(resolve=>{finishGeneration=resolve;});
  await page.route('**/api/auth/session',route=>route.fulfill({status:200,contentType:'application/json',body:JSON.stringify({access_token:'synthetic-studio-access',expires_in:3600,refreshable:true})}));
  await page.route('**/api/workspace/**',async route=>{
   const request=route.request(),path=new URL(request.url()).pathname;
@@ -19,7 +19,7 @@ test('Studio stages the active draft for AI rewrite without sending it until Gen
   }else if(path.endsWith('/content'))response=[draft];
   else if(path.endsWith('/brands')){if(request.method()==='POST'){brands++;response={id:'brand-one'};}}
   else if(path.endsWith('/content/generate')){
-   generations.push(request.postDataJSON());response={...draft,id:'generated-one',variants:[{...draft.variants[0],copy:'AI rewritten public fixture'}]};
+   generations.push(request.postDataJSON());await generationGate;response={...draft,id:'generated-one',variants:[{...draft.variants[0],copy:'AI rewritten public fixture'}]};
   }
   await route.fulfill({status:200,contentType:'application/json',body:JSON.stringify(response)});
  });
@@ -59,9 +59,10 @@ test('Studio stages the active draft for AI rewrite without sending it until Gen
  expect(generations).toHaveLength(0);expect(writes).toBe(0);expect(statusChecks).toBeGreaterThanOrEqual(2);
  page.once('dialog',dialog=>dialog.accept());
  await page.getByRole('button',{name:'Generate AI content'}).click();
+ await expect(page.locator('.orbit-chat-progress[data-state=working]')).toContainText('Working on your request');finishGeneration();
  await expect(page.getByRole('textbox',{name:'facebook copy',exact:true})).toHaveValue('AI rewritten public fixture');
  expect(generations).toEqual([{brandId:'brand-one',topic:original,platforms:['facebook'],mode:'rewrite',language:'Bahasa Melayu'}]);
- expect(brands).toBe(1);expect(writes).toBe(2);
+ expect(brands).toBe(1);expect(writes).toBe(2);await expect(page.locator('.orbit-chat-progress[data-state=ready]')).toContainText('Response ready to review');
  const chat=page.getByRole('region',{name:'What would you like to create? chat',exact:true});
  const messages=chat.getByRole('log');
  await expect(messages.getByRole('listitem')).toHaveCount(2);
