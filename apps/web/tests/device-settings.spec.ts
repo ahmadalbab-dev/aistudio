@@ -1,9 +1,10 @@
 import {expect,test,type Page} from "@playwright/test";
+test.use({timezoneId:"Asia/Kuala_Lumpur",locale:"en-MY"});
 async function settings(page:Page){await page.getByRole("button",{name:"Workspace Settings",exact:true}).click();}
 test("profile is separate, system theme reacts and regional settings persist",async({page})=>{
   await page.setViewportSize({width:390,height:844});
   await page.emulateMedia({colorScheme:"light"});await page.goto("/preview");
-  await page.getByRole("button",{name:"Open profile",exact:true}).click();
+  await page.goto("/preview?view=profile");
   await expect(page.getByRole("heading",{name:"Your brand profile",exact:true})).toBeVisible();
   await settings(page);
   await expect(page.getByRole("heading",{name:"Your brand profile",exact:true})).toBeHidden();

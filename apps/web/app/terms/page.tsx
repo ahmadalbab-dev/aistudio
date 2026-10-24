@@ -1,7 +1,7 @@
 import { LegalPage } from "../legal-content";
 
 export default function TermsPage() {
-  return <LegalPage eyebrow="Legal" title="Terms of Use" summary="Rules for using Orbit Social responsibly, safely, and in compliance with connected social platforms.">
+  return <LegalPage eyebrow="Legal" title="Terms of Use" lastUpdated="October 25, 2026" summary="Rules for using Orbit Social responsibly, safely, and in compliance with connected social platforms.">
     <h2>1. Acceptance and eligibility</h2>
     <p>By using Orbit Social, you confirm that you are authorized to act for the workspace and connected social accounts and that you will follow these terms and each platform&apos;s applicable policies.</p>
     <h2>2. Human approval remains required</h2>
@@ -23,7 +23,13 @@ export default function TermsPage() {
     <p>Access may be paused for suspected compromise, policy violations, excessive automated activity, or revoked platform authorization. You may stop using Orbit and request deletion at any time.</p>
     <h2>8. Disclaimer and liability</h2>
     <p>Orbit Social is provided on an “as available” basis. To the extent permitted by law, the operator is not responsible for indirect losses, platform enforcement decisions, missed schedules, generated inaccuracies, or business outcomes.</p>
-    <h2>9. Contact</h2>
+    <h2 id="subscription-promotions">9. Subscription prices and introductory promotions</h2>
+    <p>All advertised plan and promotional prices are displayed in USD and exclude applicable taxes. Before a customer confirms payment, checkout must display the subscription item, quantity, billing period, standard price, promotional deduction, subtotal, applicable taxes and exact final total including tax. Tax depends on verified billing details and applicable tax settings, not device GPS or the currency preference. A paid receipt is issued only after confirmed successful payment and must reflect the actual charged items and tax. Paid checkout is not open in the current plan preview. Viewing a plan does not start a subscription, charge a payment method, or grant a paid allowance.</p>
+    <p>The standard Essential price is $3 USD per month or $36 USD per year. The standard Professional price is $5 USD per month or $60 USD per year. An eligible account selecting annual billing for its first paid subscription receives the Essential first-year offer of $34 USD (a $2 reduction from $36) or 10% off Professional ($54 USD for the first year).</p>
+    <p>The annual introductory promotion applies only to annual billing, only to the first subscription and first year, and only once per Orbit account. It does not apply to monthly billing, subsequent years, renewals, returning subscriptions, or an existing paid subscription changed to annual billing. Cancellation, resubscription, a plan change or a billing-period change does not reset eligibility or grant another introductory year.</p>
+    <p>After the introductory year, the displayed standard annual price applies: $36 USD for Essential or $60 USD for Professional. Any renewal commitment, cancellation process, applicable taxes, and final amount must be disclosed before paid checkout is enabled and before a customer confirms payment. This preview does not enable automatic renewals.</p>
+    <p>The Essential $1 first-month promotion is separate and applies to monthly billing only, followed by $3 USD per month. It cannot be combined with the annual first-year promotion. Annual payment does not multiply a monthly AI allowance into an unrestricted annual balance; AI credits remain subject to the stated monthly allowance and feature availability.</p>
+    <h2>10. Contact</h2>
     <p>Contact <a className="underline" href="mailto:ahmadalbab.dev@gmail.com">ahmadalbab.dev@gmail.com</a> with the subject “Orbit Social Terms Request.”</p>
   </LegalPage>;
 }

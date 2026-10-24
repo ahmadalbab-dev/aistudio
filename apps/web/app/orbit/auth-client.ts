@@ -1,3 +1,4 @@
+import {accountProfileFromUser,cleanPersonalProfile,type AccountProfile,type PersonalProfile} from "./personal-profile";
 /** Public Auth API only. Service-role keys are excluded; refresh persistence lives in the same-origin session endpoint. */
 export function publicAuthConfig(
   url = process.env.NEXT_PUBLIC_SUPABASE_URL,
@@ -31,12 +32,14 @@ export type AuthSession = {
   expires_in: number;
   refresh_token?: string;
   refreshable?: boolean;
+  profile?: AccountProfile;
 };
 export async function passwordAuth(
   kind: "signin" | "signup",
   email: string,
   password: string,
   config = publicAuthConfig(),
+  profile?: PersonalProfile,
 ): Promise<AuthSession | null> {
   if (!config) throw Error("Customer sign-in is not configured yet.");
   let response: Response;
@@ -50,7 +53,7 @@ export async function passwordAuth(
       {
         method: "POST",
         headers: { apikey: config.key, "Content-Type": "application/json" },
-        body: JSON.stringify({ email: email.trim(), password }),
+        body: JSON.stringify({ email: email.trim(), password,...(kind==="signup"&&profile?{data:{orbit_profile:cleanPersonalProfile(profile)}}:{}) }),
         signal: AbortSignal.timeout(20000),
         redirect: "error",
       },
@@ -88,6 +91,7 @@ export async function passwordAuth(
     return {
       access_token: body.access_token,
       expires_in: body.expires_in,
+      ...(accountProfileFromUser(body.user)?{profile:accountProfileFromUser(body.user)}:{}),
       ...(typeof body.refresh_token === "string" && body.refresh_token
         ? { refresh_token: body.refresh_token }
         : {}),
@@ -148,5 +152,12 @@ export async function refreshAuth(
     access_token: body.access_token,
     refresh_token: body.refresh_token,
     expires_in: body.expires_in,
+    ...(accountProfileFromUser(body.user)?{profile:accountProfileFromUser(body.user)}:{}),
   };
+}
+
+export async function updatePersonalProfile(token:string,userId:string,details:PersonalProfile,config=publicAuthConfig()):Promise<AccountProfile>{
+ if(!config||!token||!userId)throw Error("Sign in to update your personal profile.");
+ let response:Response;try{response=await fetch(`${config.url}/auth/v1/user`,{method:"PUT",headers:{apikey:config.key,Authorization:`Bearer ${token}`,"Content-Type":"application/json"},body:JSON.stringify({data:{orbit_profile:cleanPersonalProfile(details)}}),redirect:"error",cache:"no-store",signal:AbortSignal.timeout(20000)});}catch{throw Error("Could not save your personal profile. Your changes are still here.");}
+ const profile=accountProfileFromUser(await response.json().catch(()=>null));if(!response.ok||!profile||profile.userId!==userId||!profile.provided)throw Error("Personal profile could not be verified. Check your session and retry.");return profile;
 }

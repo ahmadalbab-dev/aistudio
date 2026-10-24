@@ -23,7 +23,7 @@ test("phone preview navigates without backend calls or fake access", async ({ pa
   await page.getByRole("button", {name:"Connect facebook",exact:true}).click();
   await expect(page.getByRole("dialog")).toContainText("This is a design preview");
   await page.getByRole("button",{name:"Close connection setup",exact:true}).click();
-  await page.getByRole("button", {name:"Open profile",exact:true}).click();
+  await page.goto("/preview?view=profile");
   await expect(page.getByRole("button", { name: "Save profile" })).toBeDisabled();
   await navigate(page, "Workspace Settings");
   await page.getByRole("button", { name: "Light", exact: true }).click();

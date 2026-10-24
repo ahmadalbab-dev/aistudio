@@ -1,6 +1,7 @@
 import {describe,it,expect} from "vitest";
-import {dateKeyInZone,defaultPreferences,isTimeZone,nearestCity,sanitizePreferences,scheduledInstant} from "./device-preferences";
+import {dateKeyInZone,defaultPreferences,detectRegionalPreferences,isTimeZone,nearestCity,sanitizePreferences,scheduledInstant} from "./device-preferences";
 describe("device location and regional preferences",()=>{
+  it("detects browser hints without guessing GPS or accepting arbitrary values",()=>{expect(detectRegionalPreferences("ms-MY","Asia/Kuala_Lumpur")).toMatchObject({locale:"ms-MY",currency:"MYR",city:"Kuala Lumpur",regionalMode:"automatic"});expect(detectRegionalPreferences("en-GB","Europe/London")).toMatchObject({locale:"en-GB",currency:"GBP",city:"London"});expect(detectRegionalPreferences("not-a-real-locale!","Invalid/Zone")).toMatchObject({locale:"en-MY",timeZone:"UTC"});expect(sanitizePreferences({currency:"BTC",regionalMode:"bad",locale:"__proto__"})).toEqual(defaultPreferences);});
   it("uses full city names with real IANA zones",()=>{expect(nearestCity(5.33,103.14)).toMatchObject({name:"Kuala Terengganu",timeZone:"Asia/Kuala_Lumpur"});expect(nearestCity(1.553,110.359)).toMatchObject({name:"Kuching",timeZone:"Asia/Kuching"});expect(isTimeZone("Asia/Kuala_Terengganu")).toBe(false);});
   it("does not invent a Malaysian city for worldwide GPS",()=>{expect(nearestCity(51.5,-.12)).toBe(null);expect(nearestCity(NaN,100)).toBe(null);});
   it("validates untrusted persisted preferences",()=>{expect(sanitizePreferences({city:" ",timeZone:"invalid",locale:"xx",dateStyle:"long"})).toEqual(defaultPreferences);expect(sanitizePreferences({city:"London",timeZone:"Europe/London",hour12:true})).toMatchObject({city:"London",timeZone:"Europe/London",hour12:true});});

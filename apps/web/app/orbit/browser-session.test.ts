@@ -2,6 +2,10 @@ import {afterEach,describe,expect,it,vi} from "vitest";
 afterEach(()=>{vi.unstubAllGlobals();vi.resetModules();});
 const success=()=>Response.json({access_token:"synthetic-access",expires_in:3600,refreshable:true});
 describe("browser session coordination",()=>{
+ it("restores bounded personal preferences without carrying arbitrary claims",async()=>{
+  vi.stubGlobal("navigator",{});vi.stubGlobal("fetch",vi.fn().mockResolvedValue(Response.json({access_token:"synthetic-access",expires_in:3600,refreshable:true,profile:{userId:"user-one",provided:true,details:{displayName:"Ada",accountType:"business",persona:"Student",country:"MY",locale:"ms-MY",timeZone:"Asia/Kuala_Lumpur",role:"OWNER"},role:"OWNER"}})));
+  const {browserSession}=await import("./browser-session");const session=await browserSession();expect(session?.profile?.details).toMatchObject({displayName:"Ada",accountType:"business",persona:"Student"});expect(session?.profile).not.toHaveProperty("role");expect(session?.profile?.details).not.toHaveProperty("role");
+ });
  it("serializes refresh and signout under the same cross-tab Web Lock",async()=>{
   let finish!:(value:Response)=>void;
   const fetcher=vi.fn<typeof fetch>().mockImplementationOnce(()=>new Promise(done=>{finish=done;})).mockResolvedValueOnce(Response.json({signedOut:true}));

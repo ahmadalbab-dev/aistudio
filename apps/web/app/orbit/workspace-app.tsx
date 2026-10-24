@@ -11,7 +11,7 @@ import {
 import Home from "./page-client";
 import { EditorWorkspace } from "./editor-workspace";
 import { api, setApiSession } from "./session-api";
-import { passwordAuth, publicAuthConfig, revokeSession } from "./auth-client";
+import { passwordAuth, publicAuthConfig, revokeSession, updatePersonalProfile } from "./auth-client";
 import { OrbitMark } from "./design-ui";
 import { AppearanceToggle, useAppearance } from "./appearance";
 import { OrbitField } from "./orbit-field";
@@ -21,6 +21,10 @@ import { SessionRenewal } from "./session-renewal";
 import { PasswordRecovery } from "./password-recovery";
 import type { AuthSession } from "./auth-client";
 import { confirmEmailRedirect } from "./confirmation-client";
+import {PersonalDetailsFields} from "./personal-details-fields";
+import {defaultPersonalProfile,type AccountProfile,type PersonalProfile} from "./personal-profile";
+import {browserPreferences} from "./use-device-preferences";
+import "./profile-panel.css";
 type Workspace = { id: string; name: string; role?: string };
 export function WorkspaceApp({ editorKind }: { editorKind?: "image" | "video" } = {}) {
   const [restoring,setRestoring]=useState(true);
@@ -32,6 +36,8 @@ export function WorkspaceApp({ editorKind }: { editorKind?: "image" | "video" } 
   const [busy, setBusy] = useState(false);
   const [recovering, setRecovering] = useState(false);
   const [signup, setSignup] = useState(false);
+  const [personal,setPersonal]=useState(defaultPersonalProfile),[accountProfile,setAccountProfile]=useState<AccountProfile|null>(null);
+  useEffect(()=>{const preferences=browserPreferences();setPersonal(old=>({...old,locale:preferences.locale,timeZone:preferences.timeZone,country:preferences.country??old.country}));if(new URLSearchParams(location.search).get("signup")==="1")setSignup(true);},[]);
   const [showPassword, setShowPassword] = useState(false);
   const { motion } = useAppearance();
   const configured = !!publicAuthConfig();
@@ -68,7 +74,7 @@ export function WorkspaceApp({ editorKind }: { editorKind?: "image" | "video" } 
       new SessionRenewal(
         (next) => {
           tokenRef.current = next.access_token;
-          setToken(next.access_token);
+          setToken(next.access_token);setAccountProfile(next.profile??null);
           setApiSession({
             token: next.access_token,
             workspaceId: selectedRef.current,
@@ -80,7 +86,7 @@ export function WorkspaceApp({ editorKind }: { editorKind?: "image" | "video" } 
           tokenRef.current = "";
           setBusy(false);
           setApiSession(null);
-          setToken("");
+          setToken("");setAccountProfile(null);
           setSelected("");
           selectedRef.current = "";
           setWorkspaces([]);
@@ -127,7 +133,7 @@ export function WorkspaceApp({ editorKind }: { editorKind?: "image" | "video" } 
       );
       if (generation !== authGeneration.current) return;
       tokenRef.current = next;
-      setToken(next);
+      setToken(next);setAccountProfile(session?.profile??null);
       setWorkspaces(list);
       let preferred="";try{preferred=localStorage.getItem("orbit-workspace")??"";}catch{}
       const id = list.find(item=>item.id===preferred)?.id ?? list[0]?.id ?? "";
@@ -153,6 +159,8 @@ export function WorkspaceApp({ editorKind }: { editorKind?: "image" | "video" } 
         signup ? "signup" : "signin",
         String(fields.get("email")),
         String(fields.get("password")),
+        undefined,
+        signup?personal:undefined,
       );
       if (generation !== authGeneration.current) return;
       if (signup) {
@@ -224,7 +232,7 @@ export function WorkspaceApp({ editorKind }: { editorKind?: "image" | "video" } 
     authGeneration.current++;
     tokenRef.current="";renewal.stop();selectedRef.current="";
     try{localStorage.removeItem("orbit-workspace");}catch{}
-    setApiSession(null);setToken("");setSelected("");setWorkspaces([]);setNotice("");setBusy(false);
+    setApiSession(null);setToken("");setAccountProfile(null);setSelected("");setWorkspaces([]);setNotice("");setBusy(false);
   }
   if(restoring)return <main className="orbit-auth"><p role="status">Restoring your session…</p></main>;
   if (!token)
@@ -279,6 +287,7 @@ export function WorkspaceApp({ editorKind }: { editorKind?: "image" | "video" } 
                     signup ? "Create Orbit account" : "Sign in to Orbit"
                   }
                 >
+                  {signup?<PersonalDetailsFields value={personal} onChange={setPersonal} disabled={busy}/>:null}
                   <label className="field" htmlFor="orbit-auth-email">
                     Email address
                   </label>
@@ -401,6 +410,7 @@ export function WorkspaceApp({ editorKind }: { editorKind?: "image" | "video" } 
         </div>
       </main>
     );
+  const savePersonal=async(details:PersonalProfile)=>{const generation=authGeneration.current;if(!accountProfile)throw Error("Restore your session to edit your personal profile.");const updated=await updatePersonalProfile(tokenRef.current,accountProfile.userId,details);if(generation!==authGeneration.current)throw Error("Your session changed. Reopen your profile.");setAccountProfile(updated);};
   const workspaceControls = (
       <section
         className="workspace-session workspace-management surface"
@@ -453,5 +463,5 @@ export function WorkspaceApp({ editorKind }: { editorKind?: "image" | "video" } 
       </section>
   );
   if (selected && editorKind) return <EditorWorkspace key={selected} kind={editorKind} workspaceName={workspaces.find(workspace=>workspace.id===selected)?.name ?? "Your workspace"}/>;
-  return selected ? <Home key={selected} workspaceId={selected} workspaceName={workspaces.find(workspace=>workspace.id===selected)?.name ?? "Your workspace"} workspaceControls={workspaceControls}/> : <main className="workspace-onboarding"><div className="session-brand"><OrbitMark/><h1>Your workspace</h1><AppearanceToggle/></div>{workspaceControls}</main>;
+  return selected ? <Home key={selected} workspaceId={selected} workspaceName={workspaces.find(workspace=>workspace.id===selected)?.name ?? "Your workspace"} workspaceControls={workspaceControls} accountProfile={accountProfile} savePersonal={savePersonal}/> : <main className="workspace-onboarding"><div className="session-brand"><OrbitMark/><h1>Your workspace</h1><AppearanceToggle/></div>{workspaceControls}</main>;
 }

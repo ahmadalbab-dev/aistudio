@@ -9,6 +9,13 @@ function request(body:unknown={action:"restore"},options:{method?:string;origin?
 }
 const tokenResponse=()=>Response.json({access_token:"access-next-fixture",refresh_token:"refresh-next-fixture",expires_in:3600});
 describe("same-origin persisted browser session",()=>{
+ it("returns bounded personal preferences without provider permissions or credentials",async()=>{
+  const fetcher=vi.fn<typeof fetch>().mockResolvedValue(Response.json({access_token:"access-fixture",refresh_token:"refresh-private",expires_in:3600,user:{id:"user-one",email:"private@example.test",app_metadata:{role:"admin"},user_metadata:{orbit_profile:{displayName:"Ada",accountType:"business",persona:"Student",country:"MY",locale:"ms-MY",timeZone:"Asia/Kuala_Lumpur",role:"OWNER"}}}}));
+  const response=await handleSession(request({action:"restore"},{cookie:"orbit-refresh=refresh-cookie-fixture"}),config,fetcher);
+  const body=await response.json();expect(body.profile).toMatchObject({userId:"user-one",provided:true,details:{displayName:"Ada",accountType:"business",persona:"Student"}});
+  const serialized=JSON.stringify(body);for(const secret of ["refresh-private","private@example.test","admin","OWNER"])expect(serialized).not.toContain(secret);
+ });
+
  it("exchanges an established refresh token only with configured identity service and stores rotation HttpOnly",async()=>{
   const fetcher=vi.fn<typeof fetch>().mockResolvedValue(tokenResponse());
   const response=await handleSession(request({action:"establish",refreshToken:"refresh-initial-fixture"}),config,fetcher);
