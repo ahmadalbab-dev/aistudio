@@ -6,6 +6,11 @@ for(const width of [320,390,1440])test(`pricing navigation, plan details and the
  await plans.scrollIntoViewIfNeeded();await plans.click();await expect(page).toHaveURL(/\/preview\/pricing$/);
  await expect(page.getByRole('heading',{name:/Small price.*Room to create/})).toBeVisible();
  await expect(page.getByRole('region',{name:'Subscription plans'}).getByRole('article')).toHaveCount(3);
+ const essential=page.getByRole('article',{name:'Essential',exact:true}),professional=page.getByRole('article',{name:'Professional',exact:true});
+ await expect(essential.locator('.pricing-amount')).toHaveText('$3/ month');await expect(essential).toContainText('First month only $1');await expect(professional.locator('.pricing-amount')).toHaveText('$5/ month');
+ const annual=page.getByRole('switch',{name:'Annual billing'});await annual.click();await expect(annual).toHaveAttribute('aria-checked','true');await expect(essential.locator('.pricing-amount')).toHaveText('$36/ year');await expect(professional.locator('.pricing-amount')).toHaveText('$60/ year');await expect(essential).toContainText('monthly billing only');
+ await page.getByRole('button',{name:'View Essential',exact:true}).click();await expect(page.getByRole('dialog')).toContainText('$36 USD / year');await page.keyboard.press('Escape');
+ await annual.focus();await page.keyboard.press('Space');await expect(annual).toHaveAttribute('aria-checked','false');await expect(essential.locator('.pricing-amount')).toHaveText('$3/ month');
  for(const name of ['Essential','Professional']){
   const trigger=page.getByRole('button',{name:`View ${name}`,exact:true});await trigger.click();const dialog=page.getByRole('dialog',{name,exact:true});await expect(dialog).toBeVisible();await expect(dialog).toContainText('does not charge you or change your account');
   for(const key of ['Tab','Tab','Tab','Shift+Tab']){await page.keyboard.press(key);expect(await dialog.evaluate(node=>node.contains(document.activeElement))).toBe(true);}

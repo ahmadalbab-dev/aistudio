@@ -1,4 +1,5 @@
 import {expect,test,type Page} from "@playwright/test";
+test.use({timezoneId:"Asia/Kuala_Lumpur",locale:"en-MY"});
 async function settings(page:Page){await page.getByRole("button",{name:"Workspace Settings",exact:true}).click();}
 test("profile is separate, system theme reacts and regional settings persist",async({page})=>{
   await page.setViewportSize({width:390,height:844});

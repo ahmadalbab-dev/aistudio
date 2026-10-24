@@ -1,0 +1,33 @@
+"use client";
+import {useEffect,useId,useRef,useState} from "react";
+import {Globe2,MapPin,Save} from "lucide-react";
+import {Button,Card} from "./ui";
+import {cities,detectRegionalPreferences,isTimeZone,nearestCity,regionalCurrencies,regionalLanguages,type DevicePreferences} from "./device-preferences";
+import {browserPreferences,useDevicePreferences} from "./use-device-preferences";
+export function RegionalPreferences(){
+ const cityId=useId(),zoneId=useId();
+ const {preferences,save}=useDevicePreferences();
+ const [draft,setDraft]=useState(preferences),[notice,setNotice]=useState(""),[locating,setLocating]=useState(false);
+ const mounted=useRef(true),locationRequest=useRef(0);
+ useEffect(()=>{mounted.current=true;return()=>{mounted.current=false;locationRequest.current++;};},[]);
+ useEffect(()=>setDraft(preferences),[preferences]);
+ function edit(values:Partial<DevicePreferences>){locationRequest.current++;setLocating(false);setDraft(old=>({...old,...values,regionalMode:"manual"}));setNotice("");}
+ function locate(){
+  if(!navigator.geolocation){setNotice("Device location is unavailable. Enter your city and timezone below.");return;}
+  const request=++locationRequest.current;setLocating(true);setNotice("Waiting for your device location permission…");
+  navigator.geolocation.getCurrentPosition(position=>{
+   if(!mounted.current||request!==locationRequest.current)return;
+   const city=nearestCity(position.coords.latitude,position.coords.longitude),browser=browserPreferences();
+   setDraft(old=>({...old,city:city?.name??browser.city,timeZone:city?.timeZone??browser.timeZone,currency:city?detectRegionalPreferences(old.locale,city.timeZone).currency:browser.currency,regionalMode:"manual"}));
+   setLocating(false);setNotice(city?`Nearest supported city: ${city.name}. Review and save your preferences.`:"No supported city near these coordinates. Browser timezone was suggested; review or enter your location manually.");
+  },error=>{if(!mounted.current||request!==locationRequest.current)return;setLocating(false);setNotice(error.code===1?"Location permission was declined. You can still enter your city manually.":"Device location could not be determined. Enter your city manually.");},{enableHighAccuracy:false,timeout:10000,maximumAge:0});
+ }
+ function persist(){if(!draft.city.trim()||!isTimeZone(draft.timeZone)){setNotice("Enter your city and a valid IANA timezone, such as Asia/Kuala_Lumpur.");return;}try{save(draft);setNotice("Preferences saved on this device. New schedules use your selected timezone.");}catch(error){setNotice(error instanceof Error?error.message:"Preferences could not be saved.");}}
+ const sample=new Intl.DateTimeFormat(draft.locale,{timeZone:isTimeZone(draft.timeZone)?draft.timeZone:"UTC",dateStyle:draft.dateStyle,timeStyle:"short",hour12:draft.hour12}).format(new Date("2026-10-25T06:30:00Z"));
+ return <Card className="surface device-settings regional-card"><div className="panel-label"><Globe2 size={19}/><h2>Language & region</h2></div><p>Make Orbit feel at home. Start with your browser settings, or choose your own.</p>
+  <label className="preference-check regional-auto"><input type="checkbox" checked={draft.regionalMode==="automatic"} onChange={event=>{locationRequest.current++;setLocating(false);setDraft(old=>event.target.checked?{...browserPreferences(),dateStyle:old.dateStyle,mediaEditor:old.mediaEditor}:{...old,regionalMode:"manual"});setNotice("");}}/><span>Follow device language & timezone<small>Updates when you return to Orbit. Save to keep this choice.</small></span></label>
+  <div className="two-fields"><label className="field">Preferred language<select value={draft.locale} onChange={event=>edit({locale:event.target.value as DevicePreferences["locale"]})}>{Object.entries(regionalLanguages).map(([value,label])=><option key={value} value={value}>{label}</option>)}</select></label><label className="field">Currency preference<select value={draft.currency??"MYR"} onChange={event=>edit({currency:event.target.value as DevicePreferences["currency"]})}>{regionalCurrencies.map(currency=><option key={currency} value={currency}>{currency}</option>)}</select></label><label className="field">City or area<input list={cityId} aria-label="City or area" value={draft.city} maxLength={100} onChange={event=>{const city=cities.find(city=>city.name===event.target.value);edit({city:event.target.value,...(city?{timeZone:city.timeZone,currency:"MYR"}:{})});}}/><datalist id={cityId}>{cities.map(city=><option key={city.name} value={city.name}/>)}</datalist></label><label className="field">Timezone (IANA)<input aria-label="Timezone" list={zoneId} value={draft.timeZone} onChange={event=>edit({timeZone:event.target.value})}/><datalist id={zoneId}>{[...new Set([draft.timeZone,"Asia/Kuala_Lumpur","Asia/Kuching","Asia/Singapore","Asia/Tokyo","Europe/London","America/New_York","Australia/Sydney","UTC"])].map(zone=><option key={zone} value={zone}/>)}</datalist></label><label className="field">Date format<select value={draft.dateStyle} onChange={event=>setDraft({...draft,dateStyle:event.target.value as DevicePreferences["dateStyle"]})}><option value="medium">25 Oct 2026</option><option value="short">25/10/2026</option></select></label><label className="field">Clock format<select value={draft.hour12?"12":"24"} onChange={event=>edit({hour12:event.target.value==="12"})}><option value="24">24 hour</option><option value="12">12 hour (AM/PM)</option></select></label><label className="field">Open Media with<select value={draft.mediaEditor} onChange={event=>setDraft({...draft,mediaEditor:event.target.value as DevicePreferences["mediaEditor"]})}><option value="video">Video editor</option><option value="image">Image editor</option></select></label></div>
+  <div className="regional-sample"><span>Format preview</span><strong>{sample}</strong><small>{draft.timeZone} · {draft.currency??"MYR"}</small></div><p className="revision-label">Language formats dates; AI writing language stays in your brand profile. Currency is a saved preference. Plans are priced in USD; no exchange rate or converted charge is implied.</p>
+  <div className="regional-actions"><Button onClick={persist}><Save size={17}/>Save device preferences</Button><Button variant="outline" disabled={locating} onClick={locate}><MapPin size={17}/>{locating?"Detecting location…":"Use device location"}</Button></div><p className="revision-label">GPS is requested only with this button. Nearby supported Malaysian cities are matched on this device. Coordinates are never saved or sent to a geocoding service.</p>{notice?<p role="status" className="action-notice">{notice}</p>:null}
+ </Card>;
+}

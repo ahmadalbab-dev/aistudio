@@ -1,8 +1,8 @@
 /** Launch proposal only: this catalogue does not grant access or create a subscription. */
 export const pricingPlans = [
  {id:'free',name:'Free',price:0,audience:'Explore at your own pace.',tagline:'A little curiosity goes a long way.',credits:'3 AI trial credits · once per account',generation:'One image OR one video up to 6 seconds, once per account',features:['Basic image and video editing','Device projects and local exports','AI chat with trial credits','One image OR a 6-second video trial'],excluded:['Premium templates','Team invitations'],cta:'Explore Free'},
- {id:'essential',name:'Essential',price:1,audience:'For occasional creators.',tagline:'Your next idea, for one dollar.',credits:'20 AI credits / month',generation:'Video up to 15 seconds per clip; monthly credits apply',features:['Everything in Free','Monthly AI chat and writing credits','Selected image-generation templates','Video generation up to 15 seconds'],excluded:['Full template collection','Team invitations'],cta:'View Essential'},
- {id:'professional',name:'Professional',price:3,audience:'The complete available Orbit toolkit.',tagline:'More room for everything you make.',credits:'60 AI credits / month',generation:'Video up to 15 seconds per clip; monthly credits apply',features:['All available image and video tools','Higher AI chat and generation allowance','Full available template collection','Brand profile and saved destinations'],excluded:['Team invitations'],cta:'View Professional'},
+ {id:'essential',name:'Essential',price:3,audience:'For occasional creators.',tagline:'Start for $1. Keep creating for $3 a month.',credits:'20 AI credits / month',generation:'Video up to 15 seconds per clip; monthly credits apply',features:['Everything in Free','Monthly AI chat and writing credits','Selected image-generation templates','Video generation up to 15 seconds'],excluded:['Full template collection','Team invitations'],cta:'View Essential'},
+ {id:'professional',name:'Professional',price:5,audience:'The complete available Orbit toolkit.',tagline:'More room for everything you make.',credits:'60 AI credits / month',generation:'Video up to 15 seconds per clip; monthly credits apply',features:['All available image and video tools','Higher AI chat and generation allowance','Full available template collection','Brand profile and saved destinations'],excluded:['Team invitations'],cta:'View Professional'},
 ] as const;
 export type PricingPlan=typeof pricingPlans[number];
 export const pricingComparison=[
@@ -16,3 +16,6 @@ export const pricingComparison=[
  {feature:'Workspace members',values:['1 person','1 person','1 person']},
  {feature:'Music, publishing and cloud sync',values:['Available services only','Available services only','Available services only'],upcoming:true},
 ] as const;
+
+export type BillingCycle="monthly"|"annually";
+export function cyclePrice(plan:PricingPlan,cycle:BillingCycle){return plan.price*(cycle==="annually"?12:1);}
