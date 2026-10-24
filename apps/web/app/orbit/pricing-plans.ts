@@ -18,4 +18,7 @@ export const pricingComparison=[
 ] as const;
 
 export type BillingCycle="monthly"|"annually";
-export function cyclePrice(plan:PricingPlan,cycle:BillingCycle){return plan.price*(cycle==="annually"?12:1);}
+export function annualDiscount(plan:PricingPlan){return plan.id==="essential"?5:plan.id==="professional"?10:0;}
+/** First-year advertised offer, not an eligibility decision or a checkout quote. */
+export function cyclePrice(plan:PricingPlan,cycle:BillingCycle){return cycle==="annually"?Math.round(plan.price*12*(100-annualDiscount(plan)))/100:plan.price;}
+export function priceLabel(price:number){return Number.isInteger(price)?String(price):price.toFixed(2);}
