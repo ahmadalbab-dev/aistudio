@@ -16,7 +16,7 @@ const providers=[
 ] as const;
 export function ConnectionsPanel({status,preview=false,onStatus}:{status:IntegrationStatus|null;preview?:boolean;onStatus?:(status:IntegrationStatus)=>void}) {
  const [selected,setSelected]=useState<typeof providers[number]|null>(null),[latest,setLatest]=useState(status),[checking,setChecking]=useState(false),[authorizing,setAuthorizing]=useState(false),[notice,setNotice]=useState("");
- const dialog=useRef<HTMLDialogElement>(null),operation=useRef(0),callbackHandled=useRef(false);
+ const dialog=useRef<HTMLDialogElement>(null),operation=useRef(0),callbackHandled=useRef(false),opener=useRef<HTMLButtonElement|null>(null);
  useEffect(()=>setLatest(status),[status]);
  useEffect(()=>{if(selected&&!dialog.current?.open)dialog.current?.showModal();},[selected]);
  useEffect(()=>{
@@ -61,11 +61,11 @@ export function ConnectionsPanel({status,preview=false,onStatus}:{status:Integra
   <div className="connection-grid">{providers.map(item=>{const state=latest?.providers[item.id];return <Card key={item.id} className={`surface connection-card ${item.id} ${state?.connected?"is-connected":"is-offline"}`}>
    <div className="connection-icon"><PlatformIcon platform={item.id} size={44}/></div><h2>{item.name}</h2>
    <span className="connection-state"><span/>{state?.connected?"Connected":preview?"Preview only":state?.configured&&state?.oauthImplemented?"Ready to connect":latest?"Setup required":"Status unavailable"}</span><p>{item.account}</p>
-   <button className="text-action" aria-label={`${state?.connected?"Manage":"Connect"} ${item.id}`} onClick={()=>setSelected(item)}><Link2 size={16}/>{state?.connected?"Manage connection":"Connect account"}</button>
+   <button className="text-action" aria-label={`${state?.connected?"Manage":"Connect"} ${item.id}`} onClick={event=>{opener.current=event.currentTarget;event.currentTarget.focus();setSelected(item);}}><Link2 size={16}/>{state?.connected?"Manage connection":"Connect account"}</button>
    <small>{state?.accounts?.map(account=>`${account.name} · ${account.accountType??"Account"}`).join(", ")||"Owner authorisation required"}</small>
   </Card>;})}</div>
   <div className="numbered-section"><div className="section-index"><span>01</span>Connection setup</div><div className="connection-setup"><h2>Your accounts stay yours.</h2><p>Connect through the official provider authorisation screen. You choose the account and review its permissions.</p><p className="action-notice"><Info size={15}/>Live publishing is off. You can continue creating, exporting and recording schedules.</p></div></div>
-  <dialog ref={dialog} className="connection-dialog" aria-labelledby="connection-title" aria-describedby="connection-description" onCancel={event=>{event.preventDefault();close();}} onClose={()=>setSelected(null)}>{selected?<>
+  <dialog ref={dialog} className="connection-dialog" aria-labelledby="connection-title" aria-describedby="connection-description" onCancel={event=>{event.preventDefault();close();}} onClose={()=>{setSelected(null);opener.current?.focus();}}>{selected?<>
    <header><div className="panel-label"><PlatformIcon platform={selected.id} size={30}/><h2 id="connection-title">{provider?.connected?"Manage":"Connect"} {selected.name}</h2></div><button className="icon-button" aria-label="Close connection setup" onClick={close}><X size={20}/></button></header>
    <p id="connection-description">{selected.requirement}</p>
    <div className="connection-blocker" role="note"><ShieldCheck size={20}/><div><strong>{preview?"Sign in to a workspace":provider?.connected?"Account connected":ready?"Ready for your authorisation":"Owner setup required"}</strong><p>{preview?"This is a design preview. No social account will be authorised here.":provider?.connected?"The account is saved in this workspace. Reconnect if its permissions have changed. Connecting does not publish any content.":ready?`Continue to ${selected.name} to authorise your account, then return here to verify the connection. Connecting does not publish any content.`:provider?.oauthImplemented?"The workspace operator needs to finish this provider's app configuration before accounts can be connected.":"Orbit's social OAuth authorisation flow is not enabled in this deployment. The workspace operator must finish the provider integration before customers can connect."}</p></div></div>

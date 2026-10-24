@@ -91,8 +91,8 @@ export default function Home({workspaceId,workspaceName="Preview workspace",work
       {view==="video"?<MediaEntry preview={preview}/>:null}
       <div hidden={view!=="calendar"}><Calendar items={items} refresh={refresh} openDraft={openDraft}/></div>
       <div hidden={view!=="connections"}><ConnectionsPanel status={connection} preview={preview} onStatus={setConnection}/></div>
-      <div hidden={view!=="profile"}><ProfilePanel preview={preview} profile={profile} save={saveProfile} status={connection} onConnect={()=>go("connections")} onRefresh={refreshConnections}/></div>
-      <div hidden={view!=="settings"}><WorkspaceSettings preview={preview} workspaceControls={workspaceControls}/></div>
+      <div hidden={view!=="profile"}>{view==="profile"?<ProfilePanel preview={preview} profile={profile} save={saveProfile} status={connection} onConnect={()=>go("connections")} onRefresh={refreshConnections}/>:null}</div>
+      <div hidden={view!=="settings"}>{view==="settings"?<WorkspaceSettings preview={preview} workspaceControls={workspaceControls}/>:null}</div>
       <footer className="orbit-footer"><span className="footer-mark">orbit<span className="word-dot">.</span></span><span>Make room for better content.</span><div><a href="/privacy">Privacy</a><a href="/terms">Terms</a><a href="/data-deletion">Your data</a></div></footer>
     </div>
   </main>;
